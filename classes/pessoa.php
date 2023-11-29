@@ -6,40 +6,46 @@ class Pessoa {
         $this->conn = $db;
     }
 
-    public function cadastrarPessoa($nome, $data_nascimento, $cpf, $rg) {
-        // Monta a consulta SQL para inserir uma nova pessoa
+    public function inserirPessoa($nome, $data_nascimento, $cpf, $rg) {
         $sql = "INSERT INTO pessoa (nome, data_nascimento, cpf, rg) VALUES (?, ?, ?, ?)";
-
-        // Prepara a declaração SQL
         $stmt = $this->conn->prepare($sql);
-
-        if (!$stmt) {
-            // Se a preparação falhar, você pode lidar com o erro aqui
-            return false;
-        }
-
-        // Vincula os parâmetros da consulta SQL aos valores fornecidos
         $stmt->bind_param("ssss", $nome, $data_nascimento, $cpf, $rg);
+        return $stmt->execute();
+    }
 
-        // Executa a consulta
-        if ($stmt->execute()) {
-            // Retorna true se o cadastro for bem-sucedido
-            return true;
+    public function buscarPessoaPorId($id) {
+        $sql = "SELECT * FROM pessoa WHERE id_pessoa = ?";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+
+        if ($result->num_rows === 1) {
+            return $result->fetch_assoc();
         } else {
-            // Retorna false em caso de erro
-            return false;
+            return null;
         }
     }
 
-    public function listarTodasPessoas() {
-        // Consulta SQL para selecionar todas as pessoas
-        $sql = "SELECT id_pessoa, nome, data_nascimento, cpf, rg FROM pessoa";
+    public function atualizarPessoa($id, $nome, $data_nascimento, $cpf, $rg) {
+        $sql = "UPDATE pessoa SET nome=?, data_nascimento=?, cpf=?, rg=? WHERE id_pessoa=?";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("ssssi", $nome, $data_nascimento, $cpf, $rg, $id);
+        return $stmt->execute();
+    }
 
-        // Executa a consulta
+    public function deletarPessoa($id) {
+        $sql = "DELETE FROM pessoa WHERE id_pessoa=?";
+        $stmt = $this->conn->prepare($sql);
+        $stmt->bind_param("i", $id);
+        return $stmt->execute();
+    }
+
+    public function listarTodasPessoas() {
+        $sql = "SELECT id_pessoa, nome, data_nascimento, cpf, rg FROM pessoa";
         $result = $this->conn->query($sql);
 
         if ($result) {
-            // Retorna os resultados como um array
             $pessoas = array();
 
             while ($row = $result->fetch_assoc()) {
@@ -48,7 +54,6 @@ class Pessoa {
 
             return $pessoas;
         } else {
-            // Retorna false em caso de erro
             return false;
         }
     }
